@@ -7,14 +7,12 @@ import os
 import torch
 import argparse
 import random
-import sys
 from diarization_dataset import DiarDataset_EVAL
 import numpy as np
 import socket
 from model.faster_rcnn.resnet import resnet
 from model.utils.config import cfg, cfg_from_file
 from utils import evaluate_no_nms
-import pprint
 
 print(socket.gethostname())
 
@@ -45,8 +43,6 @@ parser.add_argument('--merge_dis', default=0.0, type=float,
                     help='merge two segments if their distance is smaller than merge_dis')
 parser.add_argument('--min_dis', default=0.2, type=float,
                     help='minimum length of each segment, discard segments that are too short')
-parser.add_argument('--padded_len', default=15, type=int,
-                    help='label length after padding')
 
 # training parameters
 parser.add_argument('--batch_size', default=1, type=int,
@@ -67,18 +63,8 @@ parser.add_argument('--use_gpu', default=0, type=int,
 # network parameters
 parser.add_argument('--arch', default='res101', type=str, 
                     help='model architecture')
-parser.add_argument('--large_scale', default=0, type=int, 
-                    help='whether use large imag scale')
 parser.add_argument('--nclass', default=1284, type=int, 
                     help='number of classes (1283 spk and background)')
-
-# validate parameters
-parser.add_argument('--max_per_egs', default=20, type=int,
-                    help='max number of segments in an example')
-parser.add_argument('--cut_10s', default=0, type=int,
-                    help='whether to cut the whole utterance into 10s chunks')
-parser.add_argument('--save_per_chunk', default=0, type=int,
-                    help='instead of returning predict results for whole utterance, return predict results for chunks')
 
 def main():
     global args
@@ -97,7 +83,7 @@ def main():
         device = torch.device("cpu")
 
     # prepare test set
-    test_dataset = DiarDataset_EVAL(args.test_dir, args.rate, args.frame_size, args.frame_shift, None, args.padded_len, args.merge_dis, args.min_dis)
+    test_dataset = DiarDataset_EVAL(args.test_dir, args.rate, args.frame_size, args.frame_shift, None, args.merge_dis, args.min_dis)
 
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
             batch_size=args.batch_size,
@@ -106,7 +92,7 @@ def main():
     print("{} TEST segments".format(len(test_dataset)))
 
     if args.cfg_file == "":
-        args.cfg_file = "cfgs/{}_ls.yml".format(args.arch) if args.large_scale else "cfgs/{}.yml".format(args.arch)
+        args.cfg_file = "cfgs/{}.yml".format(args.arch)
     print("Using configure file {}".format(args.cfg_file))
 
     if args.cfg_file is not None:

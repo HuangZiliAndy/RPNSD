@@ -13,6 +13,7 @@ import pickle
 
 np.set_printoptions(suppress=True)
 
+# write the loss information to tensorboardX 
 def record_info(train_info, dev_info, iteration, logger):
     loss_info = {"train_loss": train_info['loss'], "dev_loss": dev_info['loss'], 
             "train_rpn_loss_cls": train_info['rpn_loss_cls'], "dev_rpn_loss_cls": dev_info['rpn_loss_cls'],
@@ -23,6 +24,7 @@ def record_info(train_info, dev_info, iteration, logger):
     logger.add_scalars("losses", loss_info, iteration)
     return 0
 
+# Training stage.
 def train(train_loader, dev_loader, model, device, optimizer, logger, args):
     # switch to train mode
     model.train()
@@ -35,6 +37,7 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
     else:
         raise ValueError("Scheduler not defined.")
 
+    # keep track of loss values and fg/bg numbers
     loss_rec, rpn_loss_cls_rec, rpn_loss_box_rec, RCNN_loss_cls_rec, RCNN_loss_bbox_rec = AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
     RCNN_loss_cls_spk_rec = AverageMeter()
     fg_cnt_rec, bg_cnt_rec = AverageMeter(), AverageMeter()
@@ -64,6 +67,7 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
             RCNN_loss_cls, RCNN_loss_cls_spk, RCNN_loss_bbox, \
             rois_label, seg_embedding = model(feat, label, length, "train")
 
+            # define the loss function
             loss = rpn_loss_cls.mean() + rpn_loss_box.mean() + RCNN_loss_cls.mean() \
                     + args.alpha * RCNN_loss_cls_spk.mean() + RCNN_loss_bbox.mean()
 
@@ -72,8 +76,7 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
             rpn_loss_box_rec.update(rpn_loss_box.item(), batch_size)
             RCNN_loss_cls_rec.update(RCNN_loss_cls.item(), batch_size)
             RCNN_loss_bbox_rec.update(RCNN_loss_bbox.item(), batch_size)
-            if RCNN_loss_cls_spk is not None:
-                RCNN_loss_cls_spk_rec.update(RCNN_loss_cls_spk.item(), batch_size)
+            RCNN_loss_cls_spk_rec.update(RCNN_loss_cls_spk.item(), batch_size)
 
             fg_cnt = torch.sum(rois_label.data.ne(0))
             bg_cnt = rois_label.data.numel() - fg_cnt
@@ -93,6 +96,7 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
                         'RCNN_loss_cls_spk': RCNN_loss_cls_spk_rec.avg, 'fg_cnt': fg_cnt_rec.avg, 'bg_cnt': bg_cnt_rec.avg}
                 end_time = time.time()
 
+                # evaluate the performance on the validation set
                 start_time_valid = time.time()
                 dev_info = validate(dev_loader, model, device, args)
                 end_time_valid = time.time()
@@ -101,8 +105,7 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
                 if args.use_tfboard:
                     record_info(train_info, dev_info, (epoch - 1) * iters_per_epoch + step, logger)
 
-                print("")
-                print("TRAIN epoch {:2d}, iter {:4d}/{:4d}, lr {:.6f}".format(
+                print("\nTRAIN epoch {:2d}, iter {:4d}/{:4d}, lr {:.6f}".format(
                     epoch, step, iters_per_epoch, optimizer.param_groups[0]['lr'])) 
                 print("""TRAIN loss {:.4f}, rpn_loss_cls {:.4f}, rpn_loss_box {:.4f}, RCNN_loss_cls {:.4f}, RCNN_loss_cls_spk {:.4f}, RCNN_loss_bbox {:.4f}, fg {:.0f}, bg {:.0f}""".format( \
                     train_info['loss'], train_info['rpn_loss_cls'], train_info['rpn_loss_box'], 
@@ -114,6 +117,7 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
                     dev_info['RCNN_loss_cls_spk'], dev_info['RCNN_loss_bbox'], dev_info['fg_cnt'], dev_info['bg_cnt']))
                 print("VALID time: {:.2f}".format(end_time_valid - start_time_valid), flush=True)
 
+                # adjust learning rate
                 if args.scheduler == "reduce":
                     scheduler.step(dev_info['loss'])
                 elif args.scheduler == "multi": 
@@ -128,10 +132,10 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
                 RCNN_loss_bbox_rec.reset()
                 fg_cnt_rec.reset()
                 bg_cnt_rec.reset()
-                if RCNN_loss_cls_spk_rec.count != 0:
-                    RCNN_loss_cls_spk_rec.reset()
+                RCNN_loss_cls_spk_rec.reset()
                 start_time = time.time()
 
+                # save models
                 save_checkpoint({
                     'epoch': epoch,
                     'iter': step,
@@ -146,6 +150,7 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
                     shutil.copyfile("{}/model/checkpoint.pth.tar".format(args.exp_dir), "{}/model/modelbest.pth.tar".format(args.exp_dir))
     return 0
 
+# Validation stage.
 def validate(dev_loader, model, device, args):
     # switch to evaluate mode
     model.eval()
@@ -163,9 +168,6 @@ def validate(dev_loader, model, device, args):
             RCNN_loss_cls, RCNN_loss_cls_spk, RCNN_loss_bbox, \
             rois_label, seg_embedding = model(feat, label, length, "dev")
 
-            if args.ignore_cls_loss:
-                RCNN_loss_cls = torch.zeros([]).to(device)
-
             loss = rpn_loss_cls.mean() + rpn_loss_box.mean() + RCNN_loss_cls.mean() \
                     + args.alpha * RCNN_loss_cls_spk.mean() + RCNN_loss_bbox.mean()
 
@@ -174,8 +176,7 @@ def validate(dev_loader, model, device, args):
             rpn_loss_box_rec.update(rpn_loss_box.item(), batch_size)
             RCNN_loss_cls_rec.update(RCNN_loss_cls.item(), batch_size)
             RCNN_loss_bbox_rec.update(RCNN_loss_bbox.item(), batch_size)
-            if RCNN_loss_cls_spk is not None:
-                RCNN_loss_cls_spk_rec.update(RCNN_loss_cls_spk.item(), batch_size)
+            RCNN_loss_cls_spk_rec.update(RCNN_loss_cls_spk.item(), batch_size)
 
             fg_cnt = torch.sum(rois_label.data.ne(0))
             bg_cnt = rois_label.data.numel() - fg_cnt
@@ -187,44 +188,7 @@ def validate(dev_loader, model, device, args):
             'RCNN_loss_cls_spk': RCNN_loss_cls_spk_rec.avg, 'fg_cnt': fg_cnt_rec.avg, 'bg_cnt': bg_cnt_rec.avg}
     return info
 
-def compute_loss(test_loader, model, device, args):
-    # switch to evaluate mode
-    model.eval()
-    loss_rec, rpn_loss_cls_rec, rpn_loss_box_rec, RCNN_loss_cls_rec, RCNN_loss_bbox_rec = AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
-
-    with torch.no_grad():
-        for i, (uttname, feat, label, length) in enumerate(test_loader, 1):
-            if i % 100 == 0:
-                print("{}/{}".format(i, len(test_loader)))
-                sys.stdout.flush()
-            feat, label, length = feat.to(device).float(), label.to(device).float(), length.to(device)
-            batch_size, seq_len, feat_dim = feat.size(0), feat.size(1), feat.size(2)
-            im_info = torch.from_numpy(np.array([[feat_dim, seq_len]]))
-            im_info = im_info.expand(batch_size, im_info.size(1))
-
-            rois, cls_prob, bbox_pred, \
-            rpn_loss_cls, rpn_loss_box, \
-            RCNN_loss_cls, RCNN_loss_bbox, \
-            rois_label = model(feat, label, length, "dev")
-
-            rois, cls_prob, bbox_pred, \
-            rpn_loss_cls, rpn_loss_box, \
-            RCNN_loss_cls, RCNN_loss_bbox, \
-            rois_label = model(feat, label, length, "dev")
-
-            loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
-                    + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
-            
-            loss_rec.update(loss.item(), batch_size)
-            rpn_loss_cls_rec.update(rpn_loss_cls.item(), batch_size)
-            rpn_loss_box_rec.update(rpn_loss_box.item(), batch_size)
-            RCNN_loss_cls_rec.update(RCNN_loss_cls.item(), batch_size)
-            RCNN_loss_bbox_rec.update(RCNN_loss_bbox.item(), batch_size)
-    info = {'loss': loss_rec.avg, 'rpn_loss_cls': rpn_loss_cls_rec.avg, 'rpn_loss_box': rpn_loss_box_rec.avg,
-            'RCNN_loss_cls': RCNN_loss_cls_rec.avg, 'RCNN_loss_bbox': RCNN_loss_bbox_rec.avg} 
-    return info
-
-# Evaluate stage. Forward the whole recording with RPNSD model
+# Evaluation stage. Forward the whole recording with RPNSD model
 # evaluate_no_nms will apply NMS after clustering
 def evaluate_no_nms(test_loader, model, device, args):
     # switch to evaluate mode
@@ -232,12 +196,11 @@ def evaluate_no_nms(test_loader, model, device, args):
     det_file = os.path.join(args.output_dir, 'detections.pkl')
 
     assert args.batch_size == 1
-    print("Forward the whole recording")
     with torch.no_grad():
         all_boxes = {}
-        for i, (uttname, feat, label) in enumerate(test_loader, 1):
+        for i, (uttname, feat, _) in enumerate(test_loader, 1):
             uttname = uttname[0]
-            feat, label = feat.to(device).float(), label.to(device).float()
+            feat = feat.to(device).float()
             batch_size, seq_len, feat_dim = feat.size(0), feat.size(1), feat.size(2)
 
             im_info = torch.from_numpy(np.array([[feat_dim, seq_len]]))

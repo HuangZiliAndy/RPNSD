@@ -1,4 +1,4 @@
-# this script is called by eval_cpu.sh. It merges the 
+# This script is called by eval_cpu.sh. It merges the
 # predictions on different machines
 
 import os
@@ -20,7 +20,6 @@ def main(args):
             predict_dict = pickle.load(fh)
             for key in predict_dict:
                 predict_dict_all[key] = predict_dict[key]
-    print("{} utts in total".format(len(predict_dict_all)))
     with open("{}/detections.pkl".format(args.predict_dir), 'wb') as fh:
         pickle.dump(predict_dict_all, fh, protocol=pickle.HIGHEST_PROTOCOL)
     return 0

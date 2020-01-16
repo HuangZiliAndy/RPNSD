@@ -4,7 +4,6 @@
 # It mainly has two steps (1) clustering (2) NMS
 
 import os
-import sys
 import numpy as np
 import pickle
 import argparse
@@ -182,7 +181,6 @@ def main():
     # (start_t, end_t, prob_bg, embedding)
     with open(args.predict_file, 'rb') as fh:
         utt2predict = pickle.load(fh)
-    print("{} utts in total".format(len(utt2predict)))
 
     # load reco2num_spk file
     if args.num_cluster:

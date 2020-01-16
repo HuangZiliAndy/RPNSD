@@ -11,7 +11,6 @@ import kaldi_data
 import random
 
 random.seed(7)
-np.set_printoptions(suppress=True)
 
 # This function process the segment labels.
 # It (1) merge two segments of the same speaker if their distance is
@@ -42,6 +41,16 @@ def process_seg(segment_array, merge_dis, min_dis):
 
 class DiarDataset(Dataset):
     def __init__(self, data_dir, rate, frame_size, frame_shift, input_transform, padded_len, merge_dis, min_dis, num_utt=-1):
+        # data_dir: Data directory
+        # rate: Sample rate in Hz (default 8000)
+        # frame_size: frame size (default 512)
+        # frame_shift: frame shift (default 80)
+        # input_transform: input transform to STFT feature. See scripts/feature.py for details
+        # padded_len: max number of segments in a sample (default 20)
+        # merge_dis: merge two segments if their distance is smaller than merge_dis (default 0)
+        # min_dis: minimum length of each segment, discard segments that are too short (default 0.2)
+        # num_utt: just use num_utt dev samples for validation, if num_utt < 0 use all of dev samples (default -1)
+
         self.data_dir = data_dir
         self.rate = rate
         self.uttlist = self.load_uttlist(data_dir)
@@ -115,7 +124,14 @@ class DiarDataset(Dataset):
         return segment_array_new
 
 class DiarDataset_EVAL(Dataset):
-    def __init__(self, data_dir, rate, frame_size, frame_shift, input_transform, padded_len, merge_dis, min_dis):
+    def __init__(self, data_dir, rate, frame_size, frame_shift, input_transform, merge_dis, min_dis):
+        # data_dir: Data directory
+        # rate: Sample rate in Hz (default 8000)
+        # frame_size: frame size (default 512)
+        # frame_shift: frame shift (default 80)
+        # input_transform: input transform to STFT feature. See scripts/feature.py for details
+        # merge_dis: merge two segments if their distance is smaller than merge_dis (default 0)
+        # min_dis: minimum length of each segment, discard segments that are too short (default 0.2)
         self.data_dir = data_dir
         self.rate = rate
         self.utt2ark = self.load_wav_scp(data_dir)
@@ -124,7 +140,6 @@ class DiarDataset_EVAL(Dataset):
         self.utt2seg = self.load_rttm(data_dir)
         self.frame_size, self.frame_shift = frame_size, frame_shift
         self.input_transform = input_transform
-        self.padded_len = padded_len
         self.merge_dis, self.min_dis = merge_dis, min_dis
 
     def __len__(self):
@@ -177,51 +192,3 @@ class DiarDataset_EVAL(Dataset):
         seg_array = np.array(seg_list)
         seg_array_new = process_seg(seg_array, self.merge_dis, self.min_dis)
         return seg_array_new
-
-if __name__ == "__main__":
-    #data_dir = "data/final/train_dev"
-    #rate = 8000
-    #frame_size = 512
-    #frame_shift = 80
-    #padded_len = 20
-    #merge_dis = 0.0
-    #min_dis = 0.2
-    #train_dataset = DiarDataset(data_dir, rate, frame_size, frame_shift, None, padded_len, merge_dis, min_dis)
-    #for (i, (uttname, feat, label, length)) in enumerate(train_dataset):
-    #    print("uttname", uttname)
-    #    print("feat", feat)
-    #    print("label", label)
-    #    print("length", length)
-    #    print("-" * 80)
-    #    if i > 1:
-    #        break
-
-    #data_dir = "data/swbd_v1_dev" 
-    #rate = 8000
-    #frame_length = 512
-    #frame_shift = 80
-    #input_transform = None
-    #padded_len = 15
-    #merge_dis = 0.2
-    #min_dis = 0.2
-    #dataset = DiarDataset_EVAL(data_dir, rate, frame_length, frame_shift, input_transform, padded_len, merge_dis, min_dis)
-    #print("len(dataset)", len(dataset))
-    #for i in range(10):
-    #    print("-" * 80)
-    #    uttname, feat, label = dataset[i]
-    #    print("uttname", uttname)
-    #    print("feat", feat.shape)
-    #    print("label", label.shape)
-    #    print("label[:20]", label[:20])
-
-    #ark = """wav-reverberate --shift-output=true --additive-signals='wav-reverberate --duration=10.0 "sox -t wav /export/corpora/JHU/musan/music/rfm/music-rfm-0112.wav -r 8000 -t wav - |" - |' --start-times='0' --snrs='8' /export/c04/hzili1/End-to-End/data_prepare/data/swbd_sre_diarization_clean_10s/wav/SRE08-fbrmv-102470-101993-0-1000.wav - |""" 
-    import subprocess
-    import io
-    import numpy as np
-    np.random.seed(0)
-    wav_rxfilename = """wav-reverberate --shift-output=true --additive-signals='sox -t wav /export/corpora/JHU/musan/noise/free-sound/noise-free-sound-0616.wav -r 8000 -t wav - |' --start-times='0' --snrs='15' /export/c04/hzili1/End-to-End/data_prepare/data/swbd_sre_diarization_clean_10s/wav/SRE08-fbrmv-102470-101993-0-1000.wav - |"""
-    p = subprocess.Popen(wav_rxfilename[:-1], shell=True,
-                         stdout=subprocess.PIPE)
-    data, samplerate = sf.read(io.BytesIO(p.stdout.read()),
-                               dtype='float64')
-    print(data)

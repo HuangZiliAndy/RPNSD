@@ -4,10 +4,8 @@ import os
 import torch
 import argparse
 import random
-import sys
 from diarization_dataset import DiarDataset
 import numpy as np
-import shutil
 import socket
 from model.faster_rcnn.resnet import resnet
 from model.utils.config import cfg, cfg_from_file
@@ -42,8 +40,8 @@ parser.add_argument('--merge_dis', default=0.0, type=float,
                     help='merge two segments if their distance is smaller than merge_dis')
 parser.add_argument('--min_dis', default=0.2, type=float,
                     help='minimum length of each segment, discard segments that are too short')
-parser.add_argument('--padded_len', default=15, type=int,
-                    help='label length after padding')
+parser.add_argument('--padded_len', default=20, type=int,
+                    help='max number of segments in a sample')
 
 # training parameters
 parser.add_argument('--resume', default=None, type=str,
@@ -66,11 +64,11 @@ parser.add_argument('--num_workers', default=0, type=int,
                     help='number of workers for data loading')
 parser.add_argument('--optimizer', default='sgd', type=str,
                     help='optimizer')
-parser.add_argument('--lr', default=0.001, type=float,
+parser.add_argument('--lr', default=0.01, type=float,
                     help='initial learning rate')
 parser.add_argument('--scheduler', default='reduce', type=str,
                     help='learning rate scheduler')
-parser.add_argument('--min_lr', default=1e-5, type=float, 
+parser.add_argument('--min_lr', default=0.0001, type=float, 
                     help='minimum learning rate')
 parser.add_argument('--patience', default=10, type=int, 
                     help='patience to reduce learning rate')
@@ -78,9 +76,6 @@ parser.add_argument('--clip', default=5.0, type=float,
                     help='gradient clip')
 parser.add_argument('--seed', default=7, type=int,
                     help='random seed')
-parser.add_argument('--ignore_cls_loss', default=0, type=int,
-                    help='ignore classification loss for validation, because the dev labels are \
-                            not in the training set')
 parser.add_argument('--alpha', default=1.0, type=float,
                     help='it seems that the RCNN_loss_cls_spk is dominating \
                          the loss function. So I want to give it a smaller weight')
@@ -88,8 +83,6 @@ parser.add_argument('--alpha', default=1.0, type=float,
 # network parameters
 parser.add_argument('--arch', default='res101', type=str, 
                     help='model architecture')
-parser.add_argument('--large_scale', default=0, type=int, 
-                    help='whether use large image scale')
 parser.add_argument('--nclass', default=5963, type=int, 
                     help='number of classes (5962 speakers and background)')
 
@@ -133,7 +126,7 @@ def main():
     print("{} TRAIN segments, {} DEV segments".format(len(train_dataset), len(dev_dataset)))
 
     if args.cfg_file == "":
-        args.cfg_file = "cfgs/{}_ls.yml".format(args.arch) if args.large_scale else "cfgs/{}.yml".format(args.arch)
+        args.cfg_file = "cfgs/{}.yml".format(args.arch)
     print("Using configure file {}".format(args.cfg_file))
 
     if args.cfg_file is not None:
