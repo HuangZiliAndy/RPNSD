@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script prepares the datasets and some necessary libraries
+
 stage=0
 . path.sh
 

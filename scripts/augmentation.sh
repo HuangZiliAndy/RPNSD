@@ -14,6 +14,8 @@ if [ -f path.sh ]; then . ./path.sh; fi
 . parse_options.sh || exit 1;
 
 if [ $# != 1 ]; then
+  echo "Usage: $0 <data_dir>"
+  echo "E.g.: $0 data/train"
   exit 1;
 fi
 

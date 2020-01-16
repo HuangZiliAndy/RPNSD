@@ -15,6 +15,8 @@ if [ -f path.sh ]; then . ./path.sh; fi
 . parse_options.sh || exit 1;
 
 if [ $# != 2 ]; then
+  echo "Usage: $0 <data-dir> <data-split-dir>"
+  echo "e.g.: $0 data/train data/train_10s"
   exit 1;
 fi
 

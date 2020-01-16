@@ -56,8 +56,7 @@ if [ $stage -le 0 ]; then
 fi
 
 if [ $stage -le 1 ]; then
-  # In this step, we keep the utterances whose
-  # both channels are in data/swbd_sre
+  # In this step, we keep the utterances whose both channels are in data/swbd_sre
   python3 scripts/swbd_sre/filter_2channel_utt.py data/swbd_sre data/swbd_sre_filtered
   utils/data/get_utt2dur.sh --nj 40 --cmd "$train_cmd" data/swbd_sre_filtered || exit 1;
   utils/fix_data_dir.sh data/swbd_sre_filtered || exit 1; # 62928 utterances
@@ -80,7 +79,7 @@ if [ $stage -le 2 ]; then
 fi
 
 if [ $stage -le 3 ]; then
-  # Create RTTM file
+  # Create RTTM file based on SAD results
   mkdir -p data/swbd_sre_diarization || exit 1;	
   python3 scripts/swbd_sre/create_rttm.py data/swbd_sre_filtered_seg/segments data/swbd_sre_diarization
   sort -k2,2 -k4,4n data/swbd_sre_diarization/rttm > data/swbd_sre_diarization/rttm_tmp
@@ -99,13 +98,14 @@ fi
 if [ $stage -le 4 ]; then
   # Filter out some "bad" audios (data cleaning)
   # Some single channel telephone speech is not clean enough. You can clearly hear two speakers talking. 
-  # Listen to swbd2-sw_13189-sw_1258-sw_1808 and swbdc-sw_41720-sw_5028-sw_5305 and you will understand the problem.
+  # For example, swbd2-sw_13189-sw_1258-sw_1808 and swbdc-sw_41720-sw_5028-sw_5305
   mkdir -p data/swbd_sre_diarization_clean || exit 1;
   python3 scripts/swbd_sre/filter_bad_utt.py data/swbd_sre_diarization data/swbd_sre_diarization_clean 
   utils/filter_scp.pl data/swbd_sre_diarization_clean/wav.scp data/swbd_sre_diarization/utt2spk > data/swbd_sre_diarization_clean/utt2spk
   utils/filter_scp.pl data/swbd_sre_diarization_clean/wav.scp data/swbd_sre_diarization/spk2utt > data/swbd_sre_diarization_clean/spk2utt
   utils/filter_scp.pl data/swbd_sre_diarization_clean/wav.scp data/swbd_sre_diarization/utt2dur > data/swbd_sre_diarization_clean/utt2dur
   utils/filter_scp.pl -f 2 data/swbd_sre_diarization_clean/wav.scp data/swbd_sre_diarization/rttm > data/swbd_sre_diarization_clean/rttm
+  # Create the mapping from speaker to index
   python3 scripts/create_spk2idx.py data/swbd_sre_diarization_clean
   utils/fix_data_dir.sh data/swbd_sre_diarization_clean || exit 1; # 29697 utterances (2 telephone channels merged), 2880.72 hours 
 fi
