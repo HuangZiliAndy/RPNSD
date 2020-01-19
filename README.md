@@ -31,6 +31,7 @@ Training on the Mixer6 + SRE + SWBD dataset. Default setting uses single GPU and
 ```bash
 ./train.sh
 ```
+Pretrained model is available at [pretrain-model](https://drive.google.com/file/d/1EYhTADveeeMlu2J3AqzkITcKXZhbNmUa/view?usp=sharing).
 
 ## Adapt
 Adapt the model on in-domain data. Since we use 5 folds cross validation, each time we train on 400 utterances from CALLHOME dataset and test on 100.
