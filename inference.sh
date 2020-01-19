@@ -8,7 +8,7 @@
 stage=0
 callhome_dir=data/callhome
 
-exp_dir_all=experiment/pretraincfgres101epoch1bs8opsgdlr0.01min_lr0.0001schedulermultipat10seed7alpha1.0archres101ls0dev12000modelbestfreeze0bnfix0cfgres101epoch10bs8opsgdlr0.00004min_lr0.00004pat10seed7alpha0.1archres101ls0
+exp_dir_all=experiment/pretraincfgres101epoch1bs8opsgdlr0.01min_lr0.0001schedulermultipat10seed7alpha1.0archres101dev12000modelbestfreeze0bnfix0cfgres101epoch10bs8opsgdlr0.00004min_lr0.00004pat10seed7alpha0.1archres101
 thres=0.5
 nms_thres=0.3
 cluster_type=kmeans
@@ -24,11 +24,11 @@ for fold_num in {1..5}; do
   exp_dir=$exp_dir_all/$fold_num 
   output_dir=$exp_dir/result/$modelname
   test_output_dir=$output_dir/callhome_test
+  echo "Fold $fold_num Modelname is $modelname"
 
   # Forward the model to get region proposals, confidence score and speaker embeddings 
   if [ $stage -le 0 ]; then
-    echo "Fold $fold_num Modelname is $modelname"
-    scripts/eval_cpu.sh --cmd "$train_cmd --mem 10G" --nj 40 \
+    scripts/eval_cpu.sh --cmd "$train_cmd --mem 1G" --nj 40 \
             --nclass 1284 $test_dir $exp_dir $modelname callhome_test || exit 1;
   fi
   

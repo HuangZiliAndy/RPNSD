@@ -8,7 +8,7 @@ cfg_file=cfgs/${cfg}.yml
 # training parameters
 freeze=0
 set_bn_fix=0
-pretrain_expname=cfgres101epoch1bs8opsgdlr0.01min_lr0.0001schedulermultipat10seed7alpha1.0archres101ls0dev12000
+pretrain_expname=cfgres101epoch1bs8opsgdlr0.01min_lr0.0001schedulermultipat10seed7alpha1.0archres101dev12000
 pretrain_modelname=modelbest
 pretrain_model=experiment/${pretrain_expname}/model/${pretrain_modelname}.pth.tar 
 epochs=10
