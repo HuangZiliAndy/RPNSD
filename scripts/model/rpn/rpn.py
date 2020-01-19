@@ -75,11 +75,6 @@ class _RPN(nn.Module):
         # proposal layer
         cfg_key = 'TRAIN' if (stage == "train" or stage == "dev") else 'TEST'
 
-        # base_feat torch.Size([8, 1024, 16, 63])
-        # rpn_conv1 torch.Size([8, 512, 16, 63])
-        # rpn_cls_score torch.Size([8, 18, 1, 63])
-        # rpn_cls_prob torch.Size([8, 18, 1, 63])
-        # rpn_bbox_pred torch.Size([8, 18, 1, 63])
         rois = self.RPN_proposal((rpn_cls_prob.data, rpn_bbox_pred.data,
                                  im_info, cfg_key))
 

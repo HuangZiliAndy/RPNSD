@@ -34,6 +34,11 @@ class _fasterRCNN(nn.Module):
         self.RCNN_roi_crop = _RoICrop()
 
     def forward(self, feat, gt_boxes, num_boxes, stage):
+        # feat: acoustic features (we use STFT) [batch_size, seq_len, feat_dim], default [8, 1000, 257]
+        # gt_boxes: ground truth speech segments, the last dimension is (start_frame, end_frame, speaker index) 
+        # [batch_size, padded_len, 3], default [8, 20, 3]
+        # num_boxes: number of speech segments in each audio [batch_size], default [8]
+        # stage: specify the stage (can be train, dev or test)
         batch_size, seq_len, feat_dim = feat.size(0), feat.size(1), feat.size(2)
 
         feat = torch.unsqueeze(feat, 1)
@@ -45,23 +50,22 @@ class _fasterRCNN(nn.Module):
         num_boxes = num_boxes.data
 
         # feed image data to base model to obtain base feature map
-        # base_feat torch.Size([8, 1024, 16, 63])
+        # base_feat: deep features after backbone (ResNet101)
+        # [batch_size, num_channels, h, w], default [8, 1024, 16, 63]
         base_feat = self.RCNN_base(feat)
 
         # feed base feature map to RPN to obtain rois
         rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes, stage)
-        # rois [batch_size, number of roi, 3] (default: torch.Size([8, 100, 3]))
+        # rois: region of interest(ROI), selected speech segment segments
         # The last dimension is (batch_idx, start_t, end_t)
+        # [batch_size, number of rois, 3] default: [8, 100, 3]
 
         # if it is training phrase, then use ground truth bboxes for refining
         if stage == "train" or stage == "dev":
             roi_data = self.RCNN_proposal_target(rois, gt_boxes, num_boxes)
-            # rois torch.Size([8, 64, 3])
-            # rois_label torch.Size([8, 64]) speaker label, 0 for background
-            # rois_target torch.Size([8, 64, 2])
-            # rois_inside_ws torch.Size([8, 64, 2]) used to compute regression loss
-            # rois_outside_ws torch.Size([8, 64, 2]) used to compute regression loss
             rois, rois_label, rois_target, rois_inside_ws, rois_outside_ws = roi_data
+            # rois: selected ROIs to compute loss, the last dimension is (batch_idx, start_t, end_t)
+            # [batch_size, number of rois, 3], default [8, 64, 3]
 
             rois_label = Variable(rois_label.view(-1).long())
             rois_target = Variable(rois_target.view(-1, rois_target.size(2)))
@@ -82,8 +86,6 @@ class _fasterRCNN(nn.Module):
         rois_tmp = rois.new(rois.size(0), rois.size(1), 5).zero_()
         rois_tmp[:, :, np.array([0, 1, 3]).astype(int)] = rois
         rois_tmp[:, :, 4] = feat_dim - 1 
-        # rois_tmp torch.Size([8, 64, 5])
-        # base_feat torch.Size([8, 1024, 16, 63])
 
         # default is 'align'
         if cfg.POOLING_MODE == 'align':
@@ -92,16 +94,14 @@ class _fasterRCNN(nn.Module):
             pooled_feat = self.RCNN_roi_pool(base_feat, rois_tmp.view(-1,5))
         else:
             raise ValueError("Pooling mode not supported.")
-        # pooled_feat: the pooled feature
-        # torch.Size([512, 1024, 7, 7])
+        # pooled_feat: the pooled feature for speech segments
+        # [batch_size * number of rois, number of channels, 7, 7], default [512, 1024, 7, 7]
 
         # feed pooled features to top model
         pooled_feat = self._head_to_tail(pooled_feat)
-        # pooled_feat torch.Size([512, 2048]) 
 
         # compute bbox offset
         bbox_pred = self.RCNN_bbox_pred(pooled_feat)
-        # bbox_pred torch.Size(512, 2]) 
 
         # compute object classification probability
         bg_cls_score = self.RCNN_bg_cls_score(pooled_feat)
@@ -120,6 +120,7 @@ class _fasterRCNN(nn.Module):
             rois_bg_label = (rois_label > 0).long()
             RCNN_loss_cls = F.cross_entropy(bg_cls_score, rois_bg_label)
             cls_score_nonzero, rois_label_nonzero = cls_score[rois_label != 0, :], rois_label[rois_label != 0]
+
             # RCNN_loss_cls_spk is the loss to classify different speakers
             RCNN_loss_cls_spk = F.cross_entropy(cls_score_nonzero, rois_label_nonzero)
 
