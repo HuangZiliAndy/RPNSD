@@ -1,5 +1,5 @@
 # RPNSD
-PyTorch implementation of RPNSD. Our code is largely based on a Faster R-CNN implementation [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch).
+PyTorch implementation of RPNSD. Our code is largely based on a Faster R-CNN implementation [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch) by [jwyang](https://github.com/jwyang).
 
 ## Install
 1. Clone this project
@@ -27,7 +27,7 @@ The purpose of this step includes
 ```
 
 ## Train
-Training on the Mixer6 + SRE + SWBD dataset. Default setting use single GPU and takes about 4 days.
+Training on the Mixer6 + SRE + SWBD dataset. Default setting uses single GPU and takes about 4 days.
 ```bash
 ./train.sh
 ```
