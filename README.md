@@ -7,12 +7,13 @@ PyTorch implementation of RPNSD. Our code is largely based on a Faster R-CNN imp
 git clone https://github.com/HuangZiliAndy/RPNSD.git
 cd RPNSD
 ```
-2. Install PyTorch (0.4.0) and torchvision
-3. Install the packages in requirements.txt
+2. Add your Python path to `PATH` variable in `path.sh`, the current default is `~/anaconda3/bin`.
+3. Install PyTorch (0.4.0) and torchvision
+4. Install the packages in requirements.txt
 ```bash
 pip install -r requirements.txt
 ```
-4. Prepare Kaldi and Faster R-CNN library (You can specify a Kaldi root if you already have it)
+5. Prepare Kaldi and Faster R-CNN library (You can specify a Kaldi root if you already have it)
 ```bash
 cd tools
 make KALDI=<path/to/a/compiled/kaldi/directory>
