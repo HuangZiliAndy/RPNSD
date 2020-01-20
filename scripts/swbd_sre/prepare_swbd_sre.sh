@@ -8,22 +8,72 @@
 stage=0
 debug=0
 
-if [ $stage -le 0 ]; then
-  # Path to some, but not all of the training corpora
-  data_root=/export/corpora/LDC
+# The default data directories are for CLSP grid only.
+# Please modify them to your own directories.
 
+# Mixer 6 Speech
+mx6_dir=/export/corpora/LDC/LDC2013S03
+
+# SRE Speech
+# 2010 NIST Speaker Recognition Evaluation Test Set
+sre10_test_dir=/export/corpora5/SRE/SRE2010/eval/
+# 2008 NIST Speaker Recognition Evaluation Test Set
+sre08_test_dir=/export/corpora/LDC/LDC2011S08
+# 2008 NIST Speaker Recognition Evaluation Training Set Part 1
+sre08_train_dir=/export/corpora/LDC/LDC2011S05
+# 2004 NIST Speaker Recognition Evaluation
+sre04_dir=/export/corpora/LDC/LDC2006S44
+# 2005 NIST Speaker Recognition Evaluation Training Data
+sre05_train_dir=/export/corpora/LDC/LDC2011S01
+# 2005 NIST Speaker Recognition Evaluation Test Data
+sre05_test_dir=/export/corpora/LDC/LDC2011S04
+# 2006 NIST Speaker Recognition Evaluation Training Set
+sre06_train_dir=/export/corpora/LDC/LDC2011S09
+# 2006 NIST Speaker Recognition Evaluation Test Set Part 1
+sre06_test_part1_dir=/export/corpora/LDC/LDC2011S10
+# 2006 NIST Speaker Recognition Evaluation Test Set Part 2
+sre06_test_part2_dir=/export/corpora/LDC/LDC2012S01
+
+# SWBD Speech
+# Switchboard Cellular Part 1 Audio
+swbd_cellular_part1_dir=/export/corpora/LDC/LDC2001S13
+# Switchboard Cellular Part 2 Audio
+swbd_cellular_part2_dir=/export/corpora5/LDC/LDC2004S07
+# Switchboard-2 Phase I
+swbd2_phase1_dir=/export/corpora/LDC/LDC98S75
+# Switchboard-2 Phase II
+swbd2_phase2_dir=/export/corpora5/LDC/LDC99S79
+# Switchboard-2 Phase III Audio
+swbd2_phase3_dir=/export/corpora5/LDC/LDC2002S06
+
+if [ $stage -le 0 ]; then
   # Prepare telephone and microphone speech from Mixer6.
-  local/make_mx6.sh $data_root/LDC2013S03 data/
+  local/make_mx6.sh $mx6_dir data/
 
   # Prepare SRE10 test and enroll. Includes microphone interview speech.
   # NOTE: This corpus is now available through the LDC as LDC2017S06.
-  local/make_sre10.pl /export/corpora5/SRE/SRE2010/eval/ data/
+  local/make_sre10.pl $sre10_test_dir data/
 
   # Prepare SRE08 test and enroll. Includes some microphone speech.
-  local/make_sre08.pl $data_root/LDC2011S08 $data_root/LDC2011S05 data/
+  local/make_sre08.pl $sre08_test_dir $sre08_train_dir data/
 
   # This prepares the older NIST SREs from 2004-2006.
-  local/make_sre.sh $data_root data/
+  wget -P data/local/ http://www.openslr.org/resources/15/speaker_list.tgz
+  tar -C data/local/ -xvf data/local/speaker_list.tgz
+  sre_ref=data/local/speaker_list
+  local/make_sre.pl $sre04_dir \
+     04 $sre_ref data/sre2004
+  local/make_sre.pl $sre05_train_dir \
+    05 $sre_ref data/sre2005_train
+  local/make_sre.pl $sre05_test_dir \
+    05 $sre_ref data/sre2005_test
+  local/make_sre.pl $sre06_train_dir \
+    06 $sre_ref data/sre2006_train
+  local/make_sre.pl $sre06_test_part1_dir \
+    06 $sre_ref data/sre2006_test_1
+  local/make_sre.pl $sre06_test_part2_dir \
+    06 $sre_ref data/sre2006_test_2
+  rm data/local/speaker_list.*
 
   # Combine all SREs prior to 2016 and Mixer6 into one dataset
   utils/combine_data.sh data/sre \
@@ -35,15 +85,15 @@ if [ $stage -le 0 ]; then
   utils/fix_data_dir.sh data/sre
 
   # Prepare SWBD corpora.
-  local/make_swbd_cellular1.pl $data_root/LDC2001S13 \
+  local/make_swbd_cellular1.pl $swbd_cellular_part1_dir \
     data/swbd_cellular1_train
-  local/make_swbd_cellular2.pl /export/corpora5/LDC/LDC2004S07 \
+  local/make_swbd_cellular2.pl $swbd_cellular_part2_dir \
     data/swbd_cellular2_train
-  local/make_swbd2_phase1.pl $data_root/LDC98S75 \
+  local/make_swbd2_phase1.pl $swbd2_phase1_dir \
     data/swbd2_phase1_train
-  local/make_swbd2_phase2.pl /export/corpora5/LDC/LDC99S79 \
+  local/make_swbd2_phase2.pl $swbd2_phase2_dir \
     data/swbd2_phase2_train
-  local/make_swbd2_phase3.pl /export/corpora5/LDC/LDC2002S06 \
+  local/make_swbd2_phase3.pl $swbd2_phase3_dir \
     data/swbd2_phase3_train
 
   # Combine all SWB corpora into one dataset.
