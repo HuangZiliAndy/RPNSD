@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# inference steps for RPNSD
+# Inference steps for RPNSD
 
 . ./cmd.sh
 . ./path.sh

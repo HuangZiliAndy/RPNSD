@@ -1,8 +1,12 @@
 #!/bin/bash
 
-stage=0
+# Training the RPNSD model on Mixer6 + SRE + SWBD
 
-. path.sh
+. ./cmd.sh
+. ./path.sh
+
+free_gpu= # comma-separated available GPU ids, eg., "0" or "0,1";
+          # for now, only single gpu training is supported
 
 train_dir=data/swbd_sre_final/train_train
 dev_dir=data/swbd_sre_final/train_dev
@@ -34,14 +38,13 @@ num_dev=12000
 
 exp_dir=experiment/cfg${cfg}epoch${epochs}bs${batch_size}op${optimizer}lr${lr}min_lr${min_lr}scheduler${scheduler}pat${patience}seed${seed}alpha${alpha}arch${arch}dev${num_dev}
 
-if [ $stage -le 0 ]; then
-    mkdir -p $exp_dir/{model,log} || exit 1;
+mkdir -p $exp_dir/{model,log} || exit 1;
 
-    CUDA_VISIBLE_DEVICES=`free-gpu -n 1` scripts/train.py $exp_dir $train_dir \
-	    $dev_dir --cfg_file $cfg_file --padded_len $padded_len \
-	    --epochs $epochs --batch_size $batch_size --num_workers $num_workers --optimizer $optimizer \
-	    --lr $lr --min_lr $min_lr --scheduler $scheduler --alpha $alpha \
-	    --patience $patience --seed $seed --arch $arch \
-	    --nclass $nclass --eval_interval $eval_interval --num_dev $num_dev \
-	    --use_tfb > $exp_dir/log/train_log 
-fi
+${cuda_cmd} $exp_dir/log/train_log \
+	CUDA_VISIBLE_DEVICES=$free_gpu python3 scripts/train.py $exp_dir $train_dir \
+	$dev_dir --cfg_file $cfg_file --padded_len $padded_len \
+	--epochs $epochs --batch_size $batch_size --num_workers $num_workers --optimizer $optimizer \
+	--lr $lr --min_lr $min_lr --scheduler $scheduler --alpha $alpha \
+	--patience $patience --seed $seed --arch $arch \
+	--nclass $nclass --eval_interval $eval_interval --num_dev $num_dev \
+	--use_tfb
