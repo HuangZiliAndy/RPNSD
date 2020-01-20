@@ -8,9 +8,14 @@
 
 stage=0
 
+# The default data directories are for CLSP grid only.
+# Please modify them to your own directories.
+
+callhome_dir=/export/corpora/NIST/LDC2001S97/
+
 if [ $stage -le 0 ]; then
   # Prepare the Callhome portion of NIST SRE 2000.
-  local/make_callhome.sh /export/corpora/NIST/LDC2001S97/ data/
+  local/make_callhome.sh $callhome_dir data/
 
   # There is some problem with the label file of iaeu.sph 
   mv data/callhome/fullref.rttm data/callhome/rttm || exit 1;
