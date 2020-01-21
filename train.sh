@@ -5,9 +5,6 @@
 . ./cmd.sh
 . ./path.sh
 
-free_gpu= # comma-separated available GPU ids, eg., "0" or "0,1";
-          # for now, only single gpu training is supported
-
 train_dir=data/swbd_sre_final/train_train
 dev_dir=data/swbd_sre_final/train_dev
 cfg=res101
@@ -40,8 +37,8 @@ exp_dir=experiment/cfg${cfg}epoch${epochs}bs${batch_size}op${optimizer}lr${lr}mi
 
 mkdir -p $exp_dir/{model,log} || exit 1;
 
-${cuda_cmd} $exp_dir/log/train_log \
-	CUDA_VISIBLE_DEVICES=$free_gpu python3 scripts/train.py $exp_dir $train_dir \
+${cuda_cmd} $exp_dir/log/run_log \
+	python3 scripts/train.py $exp_dir $train_dir \
 	$dev_dir --cfg_file $cfg_file --padded_len $padded_len \
 	--epochs $epochs --batch_size $batch_size --num_workers $num_workers --optimizer $optimizer \
 	--lr $lr --min_lr $min_lr --scheduler $scheduler --alpha $alpha \

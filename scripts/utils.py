@@ -25,7 +25,7 @@ def record_info(train_info, dev_info, iteration, logger):
     return 0
 
 # Training stage.
-def train(train_loader, dev_loader, model, device, optimizer, logger, args):
+def train(train_loader, dev_loader, model, device, optimizer, logger, log_file, args):
     # switch to train mode
     model.train()
 
@@ -105,17 +105,19 @@ def train(train_loader, dev_loader, model, device, optimizer, logger, args):
                 if args.use_tfboard:
                     record_info(train_info, dev_info, (epoch - 1) * iters_per_epoch + step, logger)
 
-                print("\nTRAIN epoch {:2d}, iter {:4d}/{:4d}, lr {:.6f}".format(
+                log_file.write("\nTRAIN epoch {:2d}, iter {:4d}/{:4d}, lr {:.6f}\n".format(
                     epoch, step, iters_per_epoch, optimizer.param_groups[0]['lr'])) 
-                print("""TRAIN loss {:.4f}, rpn_loss_cls {:.4f}, rpn_loss_box {:.4f}, RCNN_loss_cls {:.4f}, RCNN_loss_cls_spk {:.4f}, RCNN_loss_bbox {:.4f}, fg {:.0f}, bg {:.0f}""".format( \
+                log_file.write("""TRAIN loss {:.4f}, rpn_loss_cls {:.4f}, rpn_loss_box {:.4f}, RCNN_loss_cls {:.4f}, RCNN_loss_cls_spk {:.4f}, RCNN_loss_bbox {:.4f}, fg {:.0f}, bg {:.0f}\n""".format( \
                     train_info['loss'], train_info['rpn_loss_cls'], train_info['rpn_loss_box'], 
                     train_info['RCNN_loss_cls'], train_info['RCNN_loss_cls_spk'], train_info['RCNN_loss_bbox'], train_info['fg_cnt'], train_info['bg_cnt']))
-                print("TRAIN time: {:.2f}".format(end_time - start_time))
+                log_file.write("TRAIN time: {:.2f}\n".format(end_time - start_time))
+                log_file.flush()
 
-                print("""VALID loss {:.4f}, rpn_loss_cls {:.4f}, rpn_loss_box {:.4f}, RCNN_loss_cls {:.4f}, RCNN_loss_cls_spk {:.4f}, RCNN_loss_bbox {:.4f}, fg {:.0f}, bg {:.0f}""".format( \
+                log_file.write("""VALID loss {:.4f}, rpn_loss_cls {:.4f}, rpn_loss_box {:.4f}, RCNN_loss_cls {:.4f}, RCNN_loss_cls_spk {:.4f}, RCNN_loss_bbox {:.4f}, fg {:.0f}, bg {:.0f}\n""".format( \
                     dev_info['loss'], dev_info['rpn_loss_cls'], dev_info['rpn_loss_box'], dev_info['RCNN_loss_cls'], \
                     dev_info['RCNN_loss_cls_spk'], dev_info['RCNN_loss_bbox'], dev_info['fg_cnt'], dev_info['bg_cnt']))
-                print("VALID time: {:.2f}".format(end_time_valid - start_time_valid), flush=True)
+                log_file.write("VALID time: {:.2f}\n".format(end_time_valid - start_time_valid))
+                log_file.flush()
 
                 # adjust learning rate
                 if args.scheduler == "reduce":

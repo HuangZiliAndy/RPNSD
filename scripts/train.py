@@ -100,7 +100,10 @@ parser.add_argument('--use_tfb', dest='use_tfboard',
 def main():
     global args
     args = parser.parse_args()
-    print(args)
+
+    # prepare log file
+    log_file = open("{}/log/train_log".format(args.exp_dir), 'w')
+    log_file.write("{}\n".format(args))
 
     # set random seed
     random.seed(args.seed)
@@ -123,11 +126,11 @@ def main():
             num_workers=args.num_workers,
             pin_memory=True,
             shuffle=False)
-    print("{} TRAIN segments, {} DEV segments".format(len(train_dataset), len(dev_dataset)))
+    log_file.write("{} TRAIN segments, {} DEV segments\n".format(len(train_dataset), len(dev_dataset)))
 
     if args.cfg_file == "":
         args.cfg_file = "cfgs/{}.yml".format(args.arch)
-    print("Using configure file {}".format(args.cfg_file))
+    log_file.write("Using configure file {}\n".format(args.cfg_file))
 
     if args.cfg_file is not None:
         cfg_from_file(args.cfg_file)
@@ -141,12 +144,12 @@ def main():
     if args.arch == 'res101':
         model = resnet(args.nclass, 101, pretrained=args.pretrain_resnet_model, freeze=args.freeze, set_bn_fix=args.set_bn_fix)
     else:
-        print("Network is not supported")
+        raise ValueError("Network is not supported")
     model.create_architecture()
     model = model.to(device)
 
     if args.pretrain_model is not None:
-        print("Loading pretrained weights from {}".format(args.pretrain_model))
+        log_file.write("Loading pretrained weights from {}\n".format(args.pretrain_model))
         checkpoint = torch.load(args.pretrain_model)
         pretrained_dict = checkpoint['model'] 
         model_dict = model.state_dict()
@@ -158,12 +161,12 @@ def main():
                 pretrained_dict_new[k] = v
             else:
                 para_list.append(k)
-        print("Total {} parameters, Loaded {} parameters".format(len(pretrained_dict), len(pretrained_dict_new)))
-        print("Not loading {} because of different sizes".format(", ".join(para_list)))
+        log_file.write("Total {} parameters, Loaded {} parameters\n".format(len(pretrained_dict), len(pretrained_dict_new)))
+        log_file.write("Not loading {} because of different sizes\n".format(", ".join(para_list)))
         model_dict.update(pretrained_dict_new) 
         model.load_state_dict(model_dict)
-        print("Loaded checkpoint '{}' (epoch {} iter {})".format(args.pretrain_model, checkpoint['epoch'], checkpoint['iter']))
-        print("Best score {}".format(checkpoint['best_score']))
+        log_file.write("Loaded checkpoint '{}' (epoch {} iter {})\n".format(args.pretrain_model, checkpoint['epoch'], checkpoint['iter']))
+        log_file.write("Best score {}\n".format(checkpoint['best_score']))
 
     params = []
     for key, value in dict(model.named_parameters()).items():
@@ -186,7 +189,7 @@ def main():
     # load parameters
     if args.resume is not None:
         if os.path.isfile(args.resume):
-            print("loading checkpoint '{}'".format(args.resume))
+            log_file.write("Loading checkpoint '{}'\n".format(args.resume))
             checkpoint = torch.load(args.resume)
             model.load_state_dict(checkpoint['model'])
             if not args.initialize:
@@ -197,11 +200,12 @@ def main():
                     start_epoch += 1
                     start_iter = 1 
 
-            print("loaded checkpoint '{}' (epoch {} iter {})"
+            log_file.write("Loaded checkpoint '{}' (epoch {} iter {})\n"
                   .format(args.resume, checkpoint['epoch'], checkpoint['iter']))
-            print("best score {:.4f}".format(checkpoint['best_score']))
+            log_file.write("Best score {:.4f}\n".format(checkpoint['best_score']))
         else:
-            raise ValueError("=> no checkpoint found at '{}'".format(args.resume))
+            raise ValueError("=> No checkpoint found at '{}'".format(args.resume))
+    log_file.flush()
 
     # use tensorboard to monitor the loss
     if args.use_tfboard:
@@ -212,10 +216,11 @@ def main():
 
     args.start_epoch, args.start_iter, args.best_score = start_epoch, start_iter, best_score
     # train
-    train(train_loader, dev_loader, model, device, optimizer, logger, args)
+    train(train_loader, dev_loader, model, device, optimizer, logger, log_file, args)
 
     if args.use_tfboard:
         logger.close()
+    log_file.close()
     return 0
             
 if __name__ == "__main__":

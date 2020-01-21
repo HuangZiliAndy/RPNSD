@@ -102,23 +102,23 @@ def main():
     if args.arch == 'res101': 
         model = resnet(args.nclass, 101, pretrained=args.pretrain_resnet_model, freeze=args.freeze, set_bn_fix=args.set_bn_fix)
     else:
-        print("network is not defined")
+        raise ValueError("Network is not supported")
     model.create_architecture()
     model = model.to(device)
 
     # load parameters
     if os.path.isfile(args.modelfile):
-        print("loading checkpoint '{}'".format(args.modelfile))
+        print("Loading checkpoint '{}'".format(args.modelfile))
         if args.use_gpu:
             checkpoint = torch.load(args.modelfile)
         else:
             checkpoint = torch.load(args.modelfile, map_location="cpu")
         model.load_state_dict(checkpoint['model'])
-        print("loaded checkpoint '{}' (epoch {} iter {})"
+        print("Loaded checkpoint '{}' (epoch {} iter {})"
               .format(args.modelfile, checkpoint['epoch'], checkpoint['iter']))
-        print("best score {:.4f}".format(checkpoint['best_score']))
+        print("Best score {:.4f}".format(checkpoint['best_score']))
     else:
-        raise ValueError("=> no checkpoint found at '{}'".format(args.modelfile))
+        raise ValueError("=> No checkpoint found at '{}'".format(args.modelfile))
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
