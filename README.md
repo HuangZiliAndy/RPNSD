@@ -8,7 +8,10 @@ git clone https://github.com/HuangZiliAndy/RPNSD.git
 cd RPNSD
 ```
 2. Add your Python path to `PATH` variable in `path.sh`, the current default is `~/anaconda3/bin`.
-3. Install PyTorch (0.4.0) and torchvision
+3. Install PyTorch (0.4.0) and torchvision according to your CUDA version
+```
+conda install pytorch==0.4.0 cuda91 torchvision pillow"<7" -c pytorch
+```
 4. Install the packages in requirements.txt
 ```bash
 pip install -r requirements.txt
@@ -17,6 +20,11 @@ pip install -r requirements.txt
 ```bash
 cd tools
 make KALDI=<path/to/a/compiled/kaldi/directory>
+```
+6. Set your backend computing environment to `cmd.sh`
+```
+# Select the backend used by run.sh from "local", "sge", "slurm", or "ssh"
+cmd_backend='local'
 ```
 ## Data preparation
 The purpose of this step includes
