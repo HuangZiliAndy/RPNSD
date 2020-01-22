@@ -10,7 +10,7 @@ cd RPNSD
 2. Add your Python path to `PATH` variable in `path.sh`, the current default is `~/anaconda3/bin`.
 3. Install PyTorch (0.4.0) and torchvision according to your CUDA version
 ```
-conda install pytorch=0.4.0 cuda91 torchvision pillow"<7" -c pytorch
+conda install pytorch==0.4.0 cuda91 torchvision pillow"<7" -c pytorch
 ```
 4. Install the packages in requirements.txt
 ```bash
