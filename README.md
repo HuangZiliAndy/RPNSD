@@ -56,3 +56,20 @@ Inference stage.
 ```bash
 ./inference.sh
 ```
+
+## Citation
+    
+    
+    @article{jjfaster2rcnn,
+        Author = {Jianwei Yang and Jiasen Lu and Dhruv Batra and Devi Parikh},
+        Title = {A Faster Pytorch Implementation of Faster R-CNN},
+        Journal = {https://github.com/jwyang/faster-rcnn.pytorch},
+        Year = {2017}
+    }
+
+    @inproceedings{huang2020speaker,
+        Title={Speaker Diarization with Region Proposal Network},
+        Author={Huang, Zili and Watanabe, Shinji and Fujita, Yusuke and Garcia, Paola and Shao, Yiwen and Povey, Daniel and Khudanpur, Sanjeev},
+        Booktitle={Accepted to ICASSP 2020},
+        Year={2020}
+    }
