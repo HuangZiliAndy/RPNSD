@@ -8,7 +8,10 @@ git clone https://github.com/HuangZiliAndy/RPNSD.git
 cd RPNSD
 ```
 2. Add your Python path to `PATH` variable in `path.sh`, the current default is `~/anaconda3/bin`.
-3. Install PyTorch (0.4.0) and torchvision
+3. Install PyTorch (0.4.0) and torchvision according to your CUDA version
+```
+conda install pytorch==0.4.0 cuda91 torchvision pillow"<7" -c pytorch
+```
 4. Install the packages in requirements.txt
 ```bash
 pip install -r requirements.txt
@@ -17,6 +20,11 @@ pip install -r requirements.txt
 ```bash
 cd tools
 make KALDI=<path/to/a/compiled/kaldi/directory>
+```
+6. Set your backend computing environment to `cmd.sh`
+```
+# Select the backend used by run.sh from "local", "sge", "slurm", or "ssh"
+cmd_backend='local'
 ```
 ## Data preparation
 The purpose of this step includes
@@ -48,3 +56,19 @@ Inference stage.
 ```bash
 ./inference.sh
 ```
+
+## Citation
+
+    @inproceedings{huang2020speaker,
+        Title={Speaker Diarization with Region Proposal Network},
+        Author={Huang, Zili and Watanabe, Shinji and Fujita, Yusuke and Garcia, Paola and Shao, Yiwen and Povey, Daniel and Khudanpur, Sanjeev},
+        Booktitle={Accepted to ICASSP 2020},
+        Year={2020}
+    }
+    
+    @article{jjfaster2rcnn,
+        Author = {Jianwei Yang and Jiasen Lu and Dhruv Batra and Devi Parikh},
+        Title = {A Faster Pytorch Implementation of Faster R-CNN},
+        Journal = {https://github.com/jwyang/faster-rcnn.pytorch},
+        Year = {2017}
+    } 
