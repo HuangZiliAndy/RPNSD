@@ -57,6 +57,12 @@ Inference stage.
 ./inference.sh
 ```
 
+## Demo
+One example from CALLHOME dataset.
+The first stream is the ground truth label, the second stream is the x-vector system, and the third stream is RPNSD.
+
+[![](https://i.ytimg.com/vi/nSFCKOkeHQc/hqdefault.jpg?sqp=-oaymwEZCNACELwBSFXyq4qpAwsIARUAAIhCGAFwAQ==&rs=AOn4CLD1xDA-wLOZA-4x2h_uu1DTQBSbaQ)](https://www.youtube.com/watch?v=nSFCKOkeHQc)
+
 ## Citation
 
     @inproceedings{huang2020speaker,
